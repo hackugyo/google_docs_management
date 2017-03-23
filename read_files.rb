@@ -44,6 +44,65 @@ def authorize
   credentials
 end
 
+
+class Google::Apis::DriveV3::Reply
+  def to_json
+    json = <<"EOS"
+  {
+    "kind": "#{kind}",
+    "id": "#{id}",
+    "createdTime": "#{created_time}",
+    "modifiedTime": "#{modified_time}",
+    "author": {
+      "kind": "#{author.kind}",
+      "displayName": "#{author.display_name}",
+      "photoLink": "#{author.photo_link}",
+      "me": #{author.me},
+      "permissionId": "#{author.permission_id}",
+      "emailAddress": "#{author.email_address}"
+    },
+    "htmlContent": "#{html_content}",
+    "content": "#{content}",
+    "deleted": #{deleted}
+  }
+EOS
+  end
+end
+
+class Google::Apis::DriveV3::Comment
+  def to_json
+    replies_pp = replies.map { |r| r.to_json }
+    json = <<"EOS"
+{
+  "kind": "#{kind}",
+  "id": "#{id}",
+  "createdTime": "#{created_time}",
+  "modifiedTime": "#{modified_time}",
+  "author": {
+    "kind": "#{author.kind}",
+    "displayName": "#{author.display_name}",
+    "photoLink": "#{author.photo_link}",
+    "me": #{author.me},
+    "permissionId": "#{author.permission_id}",
+    "emailAddress": "#{author.email_address}"
+  },
+  "htmlContent": "#{html_content}",
+  "content": "#{content}",
+  "deleted": #{deleted},
+  "resolved": #{resolved},
+  "quotedFileContent": {
+    "mimeType": "#{quoted_file_content&.mime_type}",
+    "value": "#{quoted_file_content&.value}"
+  },
+  "anchor": "#{anchor}",
+  "replies": [
+  #{replies_pp.join(',')}
+  ]
+}
+EOS
+  end
+end
+
 # Initialize the API
 service = Google::Apis::DriveV3::DriveService.new
 service.client_options.application_name = APPLICATION_NAME
@@ -59,15 +118,14 @@ file = service.get_file(FILE_ID, fields:'kind,id,name,mimeType,description,starr
 puts "#{file.name} (#{file.id})"
 
 revision = service.get_revision(FILE_ID, 'head')
-puts "#{revision.id}"
+puts "revision: #{revision.id}"
 
 comment_list = service.list_comments(FILE_ID, fields: 'comments').comments
-comments = comment_list.map {|c| "#{c.quoted_file_content.value} : #{c.content} by #{c.author.display_name} (#{c.anchor})" } # hashにしたほうがいいかも
-
+comments = comment_list.map {|c| c.to_json }
 
 format = 'plain'
 puts 'https://docs.google.com/document/d/' + FILE_ID + '/export?format=' + format
-text = service.export_file(FILE_ID, 'text/' + format)
-puts text
+# text = service.export_file(FILE_ID, 'text/' + format) # TODO: こいつをgithubにミラーする
 
+puts comment_list.first.to_json
 
