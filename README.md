@@ -12,10 +12,11 @@ $ bundle install --path vendor/bundle
 $ bundle exec ruby read_files.rb #{FILE_ID}
 ```
 
-### Comments APIの問題
+### Comments APIの問題：コメントした位置が特定できない
 
 * Webから作ったコメントには，anchorとしてkix IDが割り振られる．GET時に得られる `Comment # anchor` は `kix.***********` が入っている．（[APIドキュメント](https://developers.google.com/drive/v3/reference/comments)と矛盾）
-* API経由で作る際に，anchorとしてJSONを入れてcreateする．すると，GET時に得られる `Comment # anchor` は JSONが入っている．定義されていないキーもそのまま見えている．
+  * このanchorから，コメントをつけたハイライト箇所の前後の文を取得することができないのが問題．前後の文の手掛かりはcontentしかない．
+* いっぽうで，API経由で作る際に，anchorとしてJSONを入れてcreateする．すると，GET時に得られる `Comment # anchor` は JSONが入っている．定義されていないキーもそのまま見えている．
 
   * `POST https://www.googleapis.com/drive/v3/files/fileId/comments` で,下記のようなリクエストを送ると，コメントは作成されるものの，狙った箇所にハイライトされない：
 ```
@@ -33,6 +34,9 @@ $ bundle exec ruby read_files.rb #{FILE_ID}
 * [Rplies create API](https://developers.google.com/drive/v3/reference/replies/create)も問題ない．
 
 * 参考：[google drive sdk - What is the format of the range field required to anchor a comment to a given cell? - Stack Overflow](http://stackoverflow.com/questions/17735387/what-is-the-format-of-the-range-field-required-to-anchor-a-comment-to-a-given-ce)
+
+* https://youtu.be/ZBU52nacbLw?t=5m33s
+  * "… impossible for you to create comments anchored to text in a document format …"
 
 ### 今後
 
